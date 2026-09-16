@@ -1,0 +1,71 @@
+name: Release Yara
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        shell: powershell
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Yara_Windows_v0_2/requirements.txt
+
+      - name: Build Yara.exe
+        shell: powershell
+        run: |
+          cd Yara_Windows_v0_2
+          python -m PyInstaller `
+            --noconfirm `
+            --clean `
+            --onefile `
+            --windowed `
+            --name Yara `
+            app.py
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: |
+          choco install innosetup -y --no-progress
+
+      - name: Build Yara_Setup.exe
+        shell: powershell
+        run: |
+          cd Yara_Windows_v0_2
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.2.0
+          name: Yara v0.2.0
+          body: |
+            Yara v0.2.0
+            دستیار روزانه ویندوز
+
+            شامل:
+            - Todo List
+            - یادآورها
+            - گزارش روزانه
+            - Starter موسیقی
+            - Starter مطالعه
+            - پیشنهاد فیلم آخر هفته
+            - اجرای خودکار ویندوز
+            - System Tray
+          files: |
+            Yara_Windows_v0_2/dist/Yara.exe
+            Yara_Windows_v0_2/dist/Yara_Setup.exe
